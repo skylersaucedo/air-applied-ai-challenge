@@ -25,7 +25,7 @@ class TestDataUploader:
         
         # Initialize Qdrant client
         self.qdrant_client = QdrantClient(
-            url=os.getenv('QDRANT_HOST'),
+            url=os.getenv('QDRANT_CLUSTER'),
             port=int(os.getenv('QDRANT_PORT')),
             api_key=os.getenv('QDRANT_API_KEY')
         )

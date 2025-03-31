@@ -13,7 +13,7 @@ services:
       - POSTGRES_PASSWORD=air_password
       - POSTGRES_DB=air_db
       - REDIS_HOST=redis
-      - QDRANT_HOST=qdrant
+      - QDRANT_CLUSTER=qdrant
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION}

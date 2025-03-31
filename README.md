@@ -649,7 +649,7 @@ results = await qdrant.search(
    S3_BUCKET_NAME=your_bucket_name
 
    # Qdrant Configuration
-   QDRANT_HOST=your_qdrant_host
+   QDRANT_CLUSTER=your_qdrant_cluster
    QDRANT_PORT=6333
    QDRANT_API_KEY=your_api_key
    ```

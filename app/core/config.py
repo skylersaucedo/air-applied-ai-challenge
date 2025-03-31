@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     
     # Qdrant Configuration
-    QDRANT_HOST: str
+    QDRANT_CLUSTER: str
     QDRANT_PORT: int = 6333
     
     # OpenAI Configuration

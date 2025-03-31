@@ -11,7 +11,7 @@ logger = structlog.get_logger()
 class QdrantService:
     def __init__(self):
         self.client = QdrantClient(
-            host=settings.QDRANT_HOST,
+            host=settings.QDRANT_CLUSTER,
             port=settings.QDRANT_PORT
         )
         self.collection_name = "air_assets"
