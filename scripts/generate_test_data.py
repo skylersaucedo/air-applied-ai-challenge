@@ -5,6 +5,8 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from scipy.io import wavfile
 import cv2
+import shutil
+from pathlib import Path
 
 def generate_text_file():
     """Generate a sample text file with random content"""
@@ -84,6 +86,55 @@ def generate_video():
     
     out.release()
 
+def generate_test_data():
+    # Create test data directories
+    base_dir = Path("test_data")
+    directories = ["text", "image", "audio", "video"]
+    
+    for dir_name in directories:
+        dir_path = base_dir / dir_name
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+    # Generate Shakespeare text sample
+    shakespeare_text = """To be, or not to be, that is the question:
+Whether 'tis nobler in the mind to suffer
+The slings and arrows of outrageous fortune,
+Or to take Arms against a Sea of troubles,
+And by opposing end them: to die, to sleep
+No more; and by a sleep, to say we end
+The heart-ache, and the thousand natural shocks
+That flesh is heir to? 'Tis a consummation
+Devoutly to be wished. To die, to sleep,
+To sleep, perchance to Dream; aye, there's the rub,
+For in that sleep of death, what dreams may come,
+When we have shuffled off this mortal coil,
+Must give us pause.
+
+All the world's a stage,
+And all the men and women merely players;
+They have their exits and their entrances,
+And one man in his time plays many parts,
+His acts being seven ages.
+
+Tomorrow, and tomorrow, and tomorrow,
+Creeps in this petty pace from day to day,
+To the last syllable of recorded time;
+And all our yesterdays have lighted fools
+The way to dusty death. Out, out, brief candle!
+Life's but a walking shadow, a poor player
+That struts and frets his hour upon the stage
+And then is heard no more."""
+
+    # Write Shakespeare text to file
+    shakespeare_path = base_dir / "text" / "shakespeare_sample.txt"
+    with open(shakespeare_path, "w", encoding="utf-8") as f:
+        f.write(shakespeare_text)
+
+    print(f"Generated Shakespeare text sample at {shakespeare_path}")
+
+    # Generate other test files here...
+    # (Previous test data generation code remains unchanged)
+
 def main():
     """Generate all sample test data"""
     print("Generating test data...")
@@ -107,4 +158,4 @@ def main():
     print("Test data generation complete!")
 
 if __name__ == "__main__":
-    main() 
+    generate_test_data() 
