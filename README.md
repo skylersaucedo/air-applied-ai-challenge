@@ -767,4 +767,54 @@ The project includes a GitHub Actions workflow that:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Service Documentation
+
+### API Endpoints & Flow Diagrams
+
+#### 1. OCR Service
+- **Endpoint**: [`/api/v1/ocr/process`](app/api/v1/endpoints/ocr.py)
+- **Flow Diagrams**:
+  - [Sequence Diagram](diagrams/ocr_flow.md#sequence-diagram)
+  - [Process Flow](diagrams/ocr_flow.md#process-flow)
+  - [Architecture Overview](diagrams/ocr_flow.md#architecture-overview)
+
+#### 2. Transcription Service
+- **Endpoint**: [`/api/v1/transcription/process`](app/api/v1/endpoints/transcription.py)
+- **Flow Diagrams**:
+  - [Sequence Diagram](diagrams/transcription_flow.md#sequence-diagram)
+  - [Process Flow](diagrams/transcription_flow.md#process-flow)
+  - [Architecture Overview](diagrams/transcription_flow.md#architecture-overview)
+
+#### 3. Facial Recognition Service
+- **Endpoint**: [`/api/v1/facial-recognition/detect`](app/api/v1/endpoints/facial_recognition.py)
+- **Flow Diagrams**:
+  - [Sequence Diagram](diagrams/facial_recognition_flow.md#sequence-diagram)
+  - [Process Flow](diagrams/facial_recognition_flow.md#process-flow)
+  - [Architecture Overview](diagrams/facial_recognition_flow.md#architecture-overview)
+
+#### 4. Semantic Search Service
+- **Endpoint**: [`/api/v1/semantic-search/search`](app/api/v1/endpoints/semantic_search.py)
+- **Flow Diagrams**:
+  - [Sequence Diagram](diagrams/semantic_search_flow.md#sequence-diagram)
+  - [Process Flow](diagrams/semantic_search_flow.md#process-flow)
+  - [Architecture Overview](diagrams/semantic_search_flow.md#architecture-overview)
+
+### Quick Links
+
+#### Source Code
+- [OCR Implementation](app/api/v1/endpoints/ocr.py)
+- [Transcription Implementation](app/api/v1/endpoints/transcription.py)
+- [Facial Recognition Implementation](app/api/v1/endpoints/facial_recognition.py)
+- [Semantic Search Implementation](app/api/v1/endpoints/semantic_search.py)
+
+#### Infrastructure
+- [Terraform Configuration](terraform/main.tf)
+- [Docker Configuration](docker/Dockerfile)
+- [CI/CD Pipeline](.github/workflows/ci-cd.yml)
+
+#### Documentation
+- [API Documentation](docs/api.md)
+- [Infrastructure Documentation](docs/infrastructure.md)
+- [Testing Documentation](docs/testing.md) 
