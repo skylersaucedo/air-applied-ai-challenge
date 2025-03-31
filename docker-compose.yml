@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=air_user
+      - POSTGRES_PASSWORD=air_password
+      - POSTGRES_DB=air_db
+      - REDIS_HOST=redis
+      - QDRANT_HOST=qdrant
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+      - qdrant
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=air_user
+      - POSTGRES_PASSWORD=air_password
+      - POSTGRES_DB=air_db
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT_ALLOW_RECOVERY=true
+    command: ./qdrant --config /qdrant/config/config.yaml
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data: 
