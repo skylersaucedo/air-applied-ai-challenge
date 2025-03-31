@@ -20,8 +20,8 @@ torch==2.1.1
 transformers==4.34.0
 openai==1.3.5
 pillow==10.1.0
-numpy
-scipy
+numpy==1.26.2
+scipy==1.11.4
 
 # Testing
 pytest==7.4.3
@@ -31,11 +31,11 @@ pytest-env==1.1.1
 httpx==0.25.2
 
 # Code quality
-black
-flake8
-isort
-bandit
-safety
+black==23.10.1
+flake8==6.1.0
+isort==5.12.0
+bandit==1.7.5
+safety==2.3.4
 
 # Additional dependencies
 packaging>=21.0,<22.0

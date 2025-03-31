@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image, ImageDraw
+from scipy.io import wavfile
 
 from app.main import app
 
@@ -35,25 +38,20 @@ def test_data_dir():
 @pytest.fixture
 def sample_image(test_data_dir):
     """Create a sample test image"""
-    from PIL import Image, ImageDraw, ImageFont
-    
     image_path = test_data_dir / "sample.jpg"
     if not image_path.exists():
         # Create a sample image with text
-        img = Image.new('RGB', (400, 100), color='white')
+        img = Image.new("RGB", (400, 100), color="white")
         d = ImageDraw.Draw(img)
-        d.text((10, 10), "Sample Test Image", fill='black')
+        d.text((10, 10), "Sample Test Image", fill="black")
         img.save(image_path)
-    
+
     return str(image_path)
 
 
 @pytest.fixture
 def sample_audio(test_data_dir):
     """Create a sample test audio file"""
-    import numpy as np
-    from scipy.io import wavfile
-    
     audio_path = test_data_dir / "sample.wav"
     if not audio_path.exists():
         # Create a simple sine wave
@@ -62,7 +60,7 @@ def sample_audio(test_data_dir):
         t = np.linspace(0, duration, int(sample_rate * duration))
         data = np.sin(2 * np.pi * 440 * t)  # 440 Hz sine wave
         wavfile.write(audio_path, sample_rate, data.astype(np.float32))
-    
+
     return str(audio_path)
 
 
@@ -73,5 +71,5 @@ def sample_video(test_data_dir):
     if not video_path.exists():
         # Create an empty file for now - we'll implement actual video creation if needed
         video_path.touch()
-    
-    return str(video_path) 
+
+    return str(video_path)
