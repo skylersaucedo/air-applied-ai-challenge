@@ -138,7 +138,7 @@ air-applied-ai-challenge/
 
 ## API Documentation
 
-### OCR Endpoints
+### OCR Service
 
 #### Process Image
 ```http
@@ -204,7 +204,14 @@ Response:
 }
 ```
 
-### Transcription Endpoints
+#### Service Flow Diagrams
+
+- [Implementation Details](app/api/v1/endpoints/ocr.py)
+- [Sequence Diagram](diagrams/ocr_flow.md#sequence-diagram)
+- [Process Flow](diagrams/ocr_flow.md#process-flow)
+- [Architecture Overview](diagrams/ocr_flow.md#architecture-overview)
+
+### Transcription Service
 
 #### Process Audio
 ```http
@@ -266,7 +273,14 @@ Response:
 }
 ```
 
-### Facial Recognition Endpoints
+#### Service Flow Diagrams
+
+- [Implementation Details](app/api/v1/endpoints/transcription.py)
+- [Sequence Diagram](diagrams/transcription_flow.md#sequence-diagram)
+- [Process Flow](diagrams/transcription_flow.md#process-flow)
+- [Architecture Overview](diagrams/transcription_flow.md#architecture-overview)
+
+### Facial Recognition Service
 
 #### Detect Faces
 ```http
@@ -352,7 +366,14 @@ Response:
 }
 ```
 
-### Semantic Search Endpoints
+#### Service Flow Diagrams
+
+- [Implementation Details](app/api/v1/endpoints/facial_recognition.py)
+- [Sequence Diagram](diagrams/facial_recognition_flow.md#sequence-diagram)
+- [Process Flow](diagrams/facial_recognition_flow.md#process-flow)
+- [Architecture Overview](diagrams/facial_recognition_flow.md#architecture-overview)
+
+### Semantic Search Service
 
 #### Search Documents
 ```http
@@ -424,6 +445,13 @@ Response:
   }
 }
 ```
+
+#### Service Flow Diagrams
+
+- [Implementation Details](app/api/v1/endpoints/semantic_search.py)
+- [Sequence Diagram](diagrams/semantic_search_flow.md#sequence-diagram)
+- [Process Flow](diagrams/semantic_search_flow.md#process-flow)
+- [Architecture Overview](diagrams/semantic_search_flow.md#architecture-overview)
 
 ## Vector Search and Embedding
 
@@ -756,6 +784,171 @@ The project includes a GitHub Actions workflow that:
 - Builds and pushes Docker images to ECR
 - Deploys to ECS
 - Runs infrastructure tests
+
+### Setting up GitHub Actions with AWS
+
+Follow these steps to connect GitHub Actions with AWS:
+
+#### 1. Create IAM OpenID Connect Provider
+
+1. Go to AWS IAM Console
+2. Navigate to "Identity Providers"
+3. Click "Add Provider"
+4. Select "OpenID Connect"
+5. Enter Provider URL: `https://token.actions.githubusercontent.com`
+6. Enter Audience: `sts.amazonaws.com`
+7. Click "Add provider"
+
+#### 2. Create IAM Role
+
+1. Go to AWS IAM Console
+2. Navigate to "Roles"
+3. Click "Create role"
+4. Select "Web Identity"
+5. Choose the provider created in step 1
+6. Add the following trust policy:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "arn:aws:iam::YOUR_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringLike": {
+                    "token.actions.githubusercontent.com:sub": "repo:YOUR_GITHUB_USERNAME/air-applied-ai-challenge:*"
+                },
+                "StringEquals": {
+                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                }
+            }
+        }
+    ]
+}
+```
+
+6. Attach the following policies:
+   - `AmazonECS_FullAccess`
+   - `AmazonECR_FullAccess`
+   - Create custom policy:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::your-bucket-name",
+                "arn:aws:s3:::your-bucket-name/*"
+            ]
+        }
+    ]
+}
+```
+
+7. Name the role (e.g., `github-actions-role`)
+8. Copy the Role ARN for later use
+
+#### 3. Configure GitHub Repository
+
+1. Go to your GitHub repository
+2. Navigate to "Settings" > "Secrets and variables" > "Actions"
+3. Add the following secrets:
+   ```
+   AWS_ROLE_ARN=arn:aws:iam::YOUR_ACCOUNT_ID:role/github-actions-role
+   AWS_REGION=your-aws-region
+   ECR_REPOSITORY=your-ecr-repo-name
+   ```
+
+#### 4. Update GitHub Actions Workflow
+
+Add the following to your `.github/workflows/ci-cd.yml`:
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Deploy to ECS
+      run: |
+        aws ecs update-service --cluster your-cluster-name --service your-service-name --force-new-deployment
+```
+
+#### 5. Verify Setup
+
+1. Make a small change to your repository
+2. Push to the main branch
+3. Go to "Actions" tab in your repository
+4. Verify that the workflow runs successfully
+5. Check AWS ECR for the new image
+6. Verify ECS service update
+
+#### Troubleshooting
+
+Common issues and solutions:
+
+1. **Role Trust Relationship**
+   - Verify the trust policy has correct account ID and repository name
+   - Check OIDC provider URL is exact match
+
+2. **Permission Issues**
+   - Ensure IAM role has necessary policies
+   - Verify GitHub Actions secrets are correctly set
+   - Check AWS region matches in all configurations
+
+3. **ECR Login Failures**
+   - Verify ECR repository exists
+   - Check IAM role has ECR permissions
+   - Ensure AWS credentials are properly configured
+
+4. **ECS Deployment Issues**
+   - Verify ECS cluster and service names
+   - Check task definition is properly configured
+   - Ensure service has enough capacity for deployment
+
+For additional troubleshooting, check CloudWatch Logs and GitHub Actions run logs.
 
 ## Contributing
 
