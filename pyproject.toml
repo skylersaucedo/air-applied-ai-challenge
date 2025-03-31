@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [tool.black]
 line-length = 88
 target-version = ['py38']
@@ -39,12 +43,10 @@ module = [
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q --cov=app --cov-report=term-missing"
-testpaths = [
-    "tests",
-]
-asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=app --cov-report=term-missing"
+pythonpath = ["."]
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".git", "__pycache__"]
