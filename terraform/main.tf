@@ -9,7 +9,7 @@ terraform {
   backend "s3" {
     bucket         = "air-ai-terraform-state"
     key            = "terraform.tfstate"
-    region         = "us-west-2"
+    region         = "us-east-2"
     encrypt        = true
   }
 }

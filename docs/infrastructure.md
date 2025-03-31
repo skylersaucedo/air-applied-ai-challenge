@@ -201,7 +201,7 @@ terraform {
   backend "s3" {
     bucket = "air-applied-ai-terraform-state"
     key    = "prod/terraform.tfstate"
-    region = "us-west-2"
+    region = "us-east-2"
   }
 }
 ```

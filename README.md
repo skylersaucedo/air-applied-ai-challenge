@@ -866,6 +866,7 @@ Follow these steps to connect GitHub Actions with AWS:
    AWS_ROLE_ARN=arn:aws:iam::YOUR_ACCOUNT_ID:role/github-actions-role
    AWS_REGION=your-aws-region
    ECR_REPOSITORY=your-ecr-repo-name
+   SNYK_TOKEN=your-snyk-token
    ```
 
 #### 4. Update GitHub Actions Workflow
