@@ -62,7 +62,7 @@ tenacity>=8.2.2
 
 # ML Model Dependencies
 clip
-clap-wrapper
+python-clap
 videomae-pytorch
 
 # Development Tools
