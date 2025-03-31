@@ -488,6 +488,116 @@ results = await qdrant.search(
    - Batch processing to reduce API calls
    - Efficient storage with compression
 
+## Test Data Setup
+
+### Prerequisites
+- Python 3.8 or higher
+- Required Python packages:
+  ```bash
+  pip install pillow numpy scipy opencv-python boto3 python-dotenv qdrant-client
+  ```
+- AWS credentials (for S3 upload)
+- Qdrant credentials (for vector storage)
+
+### Generating Test Data
+
+1. Run the test data generation script:
+   ```bash
+   python scripts/generate_test_data.py
+   ```
+
+   This will create the following test files:
+   ```
+   test_data/
+   ├── text/
+   │   └── sample.txt
+   ├── image/
+   │   └── sample.jpg
+   ├── audio/
+   │   └── sample.mp3
+   └── video/
+       └── sample.mp4
+   ```
+
+2. Configure environment variables in `.env`:
+   ```
+   # AWS Configuration
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   AWS_REGION=your_region
+   S3_BUCKET_NAME=your_bucket_name
+
+   # Qdrant Configuration
+   QDRANT_HOST=your_qdrant_host
+   QDRANT_PORT=6333
+   QDRANT_API_KEY=your_api_key
+   ```
+
+3. Upload test data to AWS S3 and Qdrant:
+   ```bash
+   python scripts/upload_test_data.py
+   ```
+
+### Test Data Details
+
+1. **Text File (`sample.txt`)**
+   - Contains sample text for OCR and semantic search testing
+   - Includes various content types and formatting
+   - Size: ~1KB
+
+2. **Image File (`sample.jpg`)**
+   - Contains text, shapes, and patterns
+   - Resolution: 800x600
+   - Format: JPEG
+   - Size: ~100KB
+
+3. **Audio File (`sample.mp3`)**
+   - Duration: 5 seconds
+   - Sample rate: 44.1kHz
+   - Format: MP3
+   - Size: ~500KB
+
+4. **Video File (`sample.mp4`)**
+   - Duration: 5 seconds
+   - Resolution: 640x480
+   - FPS: 30
+   - Format: MP4
+   - Size: ~2MB
+
+### Using Test Data
+
+1. **For OCR Testing**
+   ```python
+   from app.api.v1.endpoints.ocr import OCRService
+   
+   ocr_service = OCRService()
+   result = await ocr_service.process_image("test_data/image/sample.jpg")
+   ```
+
+2. **For Transcription Testing**
+   ```python
+   from app.api.v1.endpoints.transcription import TranscriptionService
+   
+   trans_service = TranscriptionService()
+   result = await trans_service.process_audio("test_data/audio/sample.mp3")
+   ```
+
+3. **For Facial Recognition Testing**
+   ```python
+   from app.api.v1.endpoints.facial_recognition import FacialRecognitionService
+   
+   face_service = FacialRecognitionService()
+   result = await face_service.detect_faces("test_data/image/sample.jpg")
+   ```
+
+4. **For Semantic Search Testing**
+   ```python
+   from app.api.v1.endpoints.semantic_search import SemanticSearchService
+   
+   search_service = SemanticSearchService()
+   result = await search_service.search("test query")
+   ```
+
 ## Getting Started
 
 ### Prerequisites
