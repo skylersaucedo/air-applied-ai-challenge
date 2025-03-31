@@ -7,7 +7,7 @@ from prometheus_client import Counter, Histogram
 import time
 
 from app.core.config import settings
-from app.api.v1.api import api_router
+from app.api.v1.endpoints import ocr, transcription, facial_recognition, semantic_search
 from app.core.middleware import RequestLoggingMiddleware
 from app.core.exceptions import APIException
 
@@ -72,8 +72,11 @@ async def api_exception_handler(request: Request, exc: APIException):
         content={"detail": exc.message}
     )
 
-# Include API router
-app.include_router(api_router, prefix=settings.API_V1_STR)
+# Include routers
+app.include_router(ocr.router, prefix=f"{settings.API_V1_STR}/ocr", tags=["OCR"])
+app.include_router(transcription.router, prefix=f"{settings.API_V1_STR}/transcription", tags=["Transcription"])
+app.include_router(facial_recognition.router, prefix=f"{settings.API_V1_STR}/facial-recognition", tags=["Facial Recognition"])
+app.include_router(semantic_search.router, prefix=f"{settings.API_V1_STR}/semantic-search", tags=["Semantic Search"])
 
 @app.get("/health")
 async def health_check():
