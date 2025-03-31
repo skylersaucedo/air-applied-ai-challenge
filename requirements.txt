@@ -38,8 +38,8 @@ bandit==1.7.5
 safety==2.3.4
 
 # Additional dependencies
-packaging>=21.0,<22.0
-setuptools>=65.5.1
+packaging
+setuptools
 
 # Vector Search and Embeddings
 sentence-transformers>=2.2.2
