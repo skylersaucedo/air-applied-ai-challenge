@@ -1,4 +1,8 @@
+"""
+Pytest configuration file.
+"""
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -9,9 +13,15 @@ from scipy.io import wavfile
 
 from app.main import app
 
+# Add project root to Python path
+project_root = str(Path(__file__).parent.parent.absolute())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 
 @pytest.fixture
 def client():
+    """Test client fixture."""
     return TestClient(app)
 
 
