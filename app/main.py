@@ -1,9 +1,14 @@
+"""
+Main FastAPI application.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.endpoints import facial_recognition, ocr, semantic_search, transcription
+
 app = FastAPI(
     title="Air Applied AI Challenge",
-    description="AI-powered document processing and semantic search API",
+    description="API for the Air Applied AI Challenge",
     version="0.1.0",
 )
 
@@ -16,12 +21,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(ocr.router, prefix="/api/v1/ocr", tags=["OCR"])
+app.include_router(transcription.router, prefix="/api/v1/transcription", tags=["Transcription"])
+app.include_router(facial_recognition.router, prefix="/api/v1/facial-recognition", tags=["Facial Recognition"])
+app.include_router(semantic_search.router, prefix="/api/v1/semantic-search", tags=["Semantic Search"])
+
+
 @app.get("/")
-async def root():
+async def read_root():
+    """Root endpoint."""
     return {
         "message": "Welcome to the Air Applied AI Challenge API",
-        "docs_url": "/docs",
-        "redoc_url": "/redoc",
+        "docs": "/docs",
+        "redoc": "/redoc",
     }
 
 if __name__ == "__main__":

@@ -90,6 +90,9 @@ class MockQdrantClient:
         if not query_filter:
             return True
 
+        if isinstance(query_filter, Filter):
+            query_filter = query_filter.dict()
+
         if "must" in query_filter:
             for condition in query_filter["must"]:
                 key_parts = condition["key"].split(".")

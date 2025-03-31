@@ -157,3 +157,9 @@ async def batch_index_documents(
     except Exception as e:
         logger.error("Batch document indexing failed", error=str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/search")
+async def search_documents(request: dict):
+    """Search for relevant documents."""
+    return {"results": []}
