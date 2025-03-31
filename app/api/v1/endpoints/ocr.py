@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
 import structlog
 from app.services.ocr_service import OCRService
 from app.core.exceptions import APIException
@@ -9,20 +9,67 @@ router = APIRouter()
 logger = structlog.get_logger()
 ocr_service = OCRService()
 
+class ImageContent(BaseModel):
+    """Image content model"""
+    content: str = Field(..., description="Base64 encoded image data")
+    format: str = Field(..., description="Image format (e.g., jpg, png)")
+
+class OCRFeatures(BaseModel):
+    """OCR features configuration"""
+    detectText: bool = True
+    languageHints: List[str] = ["en"]
+    extractTables: bool = False
+    textDensity: str = "normal"
+
+class OCROptions(BaseModel):
+    """OCR processing options"""
+    scale: float = 1.0
+    enhanceContrast: bool = False
+    deskew: bool = True
+
 class OCRRequest(BaseModel):
     """OCR processing request model"""
-    file_id: str
-    language: Optional[str] = "en"
-    confidence_threshold: Optional[float] = 0.8
+    image: ImageContent
+    features: OCRFeatures = OCRFeatures()
+    options: OCROptions = OCROptions()
+
+class Vertex(BaseModel):
+    """Vertex model for bounding polygon"""
+    x: int
+    y: int
+
+class BoundingPoly(BaseModel):
+    """Bounding polygon model"""
+    vertices: List[Vertex]
+
+class TextAnnotation(BaseModel):
+    """Text annotation model"""
+    locale: Optional[str] = None
+    description: str
+    boundingPoly: BoundingPoly
+    confidence: Optional[float] = None
+
+class TableCell(BaseModel):
+    """Table cell model"""
+    text: str
+    rowIndex: int
+    columnIndex: int
+    confidence: float
+
+class Table(BaseModel):
+    """Table model"""
+    rows: int
+    columns: int
+    cells: List[TableCell]
 
 class OCRResponse(BaseModel):
     """OCR processing response model"""
-    file_id: str
-    text: str
+    status: str
+    requestId: str
+    processedTime: str
+    textAnnotations: List[TextAnnotation]
+    tables: Optional[List[Table]] = None
     confidence: float
-    blocks: List[dict]
-    language: str
-    processing_time: float
 
 class OCRStatusResponse(BaseModel):
     """OCR processing status response model"""
@@ -34,36 +81,21 @@ class OCRStatusResponse(BaseModel):
 @router.post("/process", response_model=OCRResponse)
 async def process_ocr(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    language: Optional[str] = "en",
-    confidence_threshold: Optional[float] = 0.8
+    request: OCRRequest
 ):
     """
     Process an image file for OCR
     """
     try:
-        # Validate file type
-        if not file.content_type.startswith('image/'):
-            raise APIException(
-                status_code=400,
-                message="Invalid file type. Only image files are supported."
-            )
-        
         # Process the image
         result = await ocr_service.process_image(
-            file=file,
-            language=language,
-            confidence_threshold=confidence_threshold
+            image_content=request.image.content,
+            image_format=request.image.format,
+            features=request.features.dict(),
+            options=request.options.dict()
         )
         
-        return OCRResponse(
-            file_id=result["file_id"],
-            text=result["text"],
-            confidence=result["confidence"],
-            blocks=result["blocks"],
-            language=result["language"],
-            processing_time=result["processing_time"]
-        )
+        return OCRResponse(**result)
         
     except APIException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -74,24 +106,19 @@ async def process_ocr(
 @router.post("/batch", response_model=List[OCRResponse])
 async def batch_process_ocr(
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...),
-    language: Optional[str] = "en",
-    confidence_threshold: Optional[float] = 0.8
+    requests: List[OCRRequest]
 ):
     """
     Process multiple images for OCR in batch
     """
     try:
         results = []
-        for file in files:
-            if not file.content_type.startswith('image/'):
-                logger.warning("Skipping invalid file type", filename=file.filename)
-                continue
-                
+        for request in requests:
             result = await ocr_service.process_image(
-                file=file,
-                language=language,
-                confidence_threshold=confidence_threshold
+                image_content=request.image.content,
+                image_format=request.image.format,
+                features=request.features.dict(),
+                options=request.options.dict()
             )
             results.append(OCRResponse(**result))
             
@@ -101,14 +128,14 @@ async def batch_process_ocr(
         logger.error("Batch OCR processing failed", error=str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/status/{file_id}", response_model=OCRStatusResponse)
-async def get_ocr_status(file_id: str):
+@router.get("/status/{request_id}", response_model=OCRResponse)
+async def get_ocr_status(request_id: str):
     """
     Get the status of an OCR processing job
     """
     try:
-        status = await ocr_service.get_status(file_id)
-        return OCRStatusResponse(**status)
+        status = await ocr_service.get_status(request_id)
+        return OCRResponse(**status)
     except APIException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:

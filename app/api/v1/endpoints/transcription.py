@@ -1,6 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-from typing import List, Optional
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
 import structlog
 from app.services.transcription_service import TranscriptionService
 from app.core.exceptions import APIException
@@ -9,66 +9,78 @@ router = APIRouter()
 logger = structlog.get_logger()
 transcription_service = TranscriptionService()
 
+class AudioContent(BaseModel):
+    """Audio content model"""
+    content: str = Field(..., description="Base64 encoded audio data")
+    format: str = Field(..., description="Audio format (e.g., mp3, wav)")
+
+class TranscriptionConfig(BaseModel):
+    """Transcription configuration"""
+    language: str = "en-US"
+    alternativeLanguages: List[str] = []
+    enableWordTimestamps: bool = True
+    enableSpeakerDiarization: bool = False
+    maxSpeakers: Optional[int] = None
+    filterProfanity: bool = False
+    model: str = "standard"
+    audioChannels: int = 1
+    sampleRateHertz: int = 44100
+
 class TranscriptionRequest(BaseModel):
     """Transcription processing request model"""
-    file_id: str
-    language: Optional[str] = "en"
-    diarization: Optional[bool] = False
-    speaker_count: Optional[int] = None
+    audio: AudioContent
+    config: TranscriptionConfig = TranscriptionConfig()
+
+class Segment(BaseModel):
+    """Transcript segment model"""
+    speakerId: Optional[int] = None
+    text: str
+    startTime: str
+    endTime: str
+    confidence: float
+
+class Word(BaseModel):
+    """Word model with timing"""
+    word: str
+    startTime: str
+    endTime: str
+    confidence: float
+    speakerId: Optional[int] = None
+
+class Metadata(BaseModel):
+    """Processing metadata"""
+    processingTime: str
+    audioQuality: str
+    backgroundNoise: str
 
 class TranscriptionResponse(BaseModel):
     """Transcription processing response model"""
-    file_id: str
-    text: str
-    segments: List[dict]
-    language: str
-    duration: float
-    speaker_count: Optional[int]
-    processing_time: float
-
-class TranscriptionStatusResponse(BaseModel):
-    """Transcription processing status response model"""
-    file_id: str
     status: str
-    progress: float
-    error: Optional[str] = None
+    requestId: str
+    duration: str
+    transcript: str
+    confidence: float
+    segments: List[Segment]
+    words: List[Word]
+    metadata: Metadata
 
 @router.post("/process", response_model=TranscriptionResponse)
 async def process_transcription(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    language: Optional[str] = "en",
-    diarization: Optional[bool] = False,
-    speaker_count: Optional[int] = None
+    request: TranscriptionRequest
 ):
     """
     Process an audio file for transcription
     """
     try:
-        # Validate file type
-        if not file.content_type.startswith('audio/'):
-            raise APIException(
-                status_code=400,
-                message="Invalid file type. Only audio files are supported."
-            )
-        
         # Process the audio
         result = await transcription_service.process_audio(
-            file=file,
-            language=language,
-            diarization=diarization,
-            speaker_count=speaker_count
+            audio_content=request.audio.content,
+            audio_format=request.audio.format,
+            config=request.config.dict()
         )
         
-        return TranscriptionResponse(
-            file_id=result["file_id"],
-            text=result["text"],
-            segments=result["segments"],
-            language=result["language"],
-            duration=result["duration"],
-            speaker_count=result.get("speaker_count"),
-            processing_time=result["processing_time"]
-        )
+        return TranscriptionResponse(**result)
         
     except APIException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -79,26 +91,18 @@ async def process_transcription(
 @router.post("/batch", response_model=List[TranscriptionResponse])
 async def batch_process_transcription(
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...),
-    language: Optional[str] = "en",
-    diarization: Optional[bool] = False,
-    speaker_count: Optional[int] = None
+    requests: List[TranscriptionRequest]
 ):
     """
     Process multiple audio files for transcription in batch
     """
     try:
         results = []
-        for file in files:
-            if not file.content_type.startswith('audio/'):
-                logger.warning("Skipping invalid file type", filename=file.filename)
-                continue
-                
+        for request in requests:
             result = await transcription_service.process_audio(
-                file=file,
-                language=language,
-                diarization=diarization,
-                speaker_count=speaker_count
+                audio_content=request.audio.content,
+                audio_format=request.audio.format,
+                config=request.config.dict()
             )
             results.append(TranscriptionResponse(**result))
             
@@ -108,14 +112,14 @@ async def batch_process_transcription(
         logger.error("Batch transcription processing failed", error=str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/status/{file_id}", response_model=TranscriptionStatusResponse)
-async def get_transcription_status(file_id: str):
+@router.get("/status/{request_id}", response_model=TranscriptionResponse)
+async def get_transcription_status(request_id: str):
     """
     Get the status of a transcription processing job
     """
     try:
-        status = await transcription_service.get_status(file_id)
-        return TranscriptionStatusResponse(**status)
+        status = await transcription_service.get_status(request_id)
+        return TranscriptionResponse(**status)
     except APIException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:
